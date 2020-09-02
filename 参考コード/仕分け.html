@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>仕分けツール</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+</head>
+<body>
+<script>
+  var numFiles = 0;
+  var files = new Array();
+  var fileNames = new Array();
+  var cursor = 0;
+  var prevImageName, currImageName, nextImageName;
+
+  var classA = new Array();
+  var classB = new Array();
+  var chache = new Array();
+
+  function drawImageOnCanvas(file){
+    var image = new Image();
+    var reader = new FileReader();
+    var canvas = $('#cur_canvas');
+    var ctx = canvas[0].getContext('2d');
+    reader.onload = function(evt) {
+      image.onload = function() {
+        ctx.clearRect(0, 0, 300, 300);
+        ctx.drawImage(image, 0, 0, 300, 300);
+      }
+      image.src = evt.target.result;
+    }
+    reader.readAsDataURL(file);
+  }
+
+  function fileListDirectory(_files) {
+    for (i=0; i<_files.length; i++) {
+      var fileType = _files[i].type;
+        if (fileType == 'image/jpeg' || fileType == 'image/png' ) {
+          files.push(_files[i])
+          fileNames.push(_files[i].name );
+          numFiles ++;
+        }
+    }
+    resetImage(cursor);
+  }
+
+  function resetImage(cursor) {
+    prevImageName = (cursor == 0 ? 'なし' : fileNames[cursor-1]);
+    currImageName = fileNames[cursor];
+    nextImageName = (cursor == numFiles - 1 ? 'なし' : fileNames[cursor+1]);
+    document.getElementById('previous').innerHTML = prevImageName;
+    document.getElementById('current').innerHTML = currImageName;
+    document.getElementById('next').innerHTML = nextImageName;
+    drawImageOnCanvas(files[cursor]);
+    document.getElementById('progress').innerHTML = (cursor+1) + '/' + numFiles;
+  }
+
+  function previous(){
+    cursor --;
+    if( cursor < 0 ) {
+      cursor = 0;
+    }
+    resetImage(cursor);
+  }
+    
+  function next(){
+    cursor ++;
+    if( cursor > numFiles-1 ) {
+      cursor = numFiles-1;
+    }
+    resetImage(cursor);
+  }
+
+  function undo() {
+    if(cursor > 0){
+      var which = chache[cursor];
+      if(which == 'A') {
+        classA.pop();
+      } else if (which == 'B') {
+        classB.pop();
+      }
+      chache.pop();
+      previous();
+      document.getElementById('classA').innerHTML = classA.length;
+      document.getElementById('classB').innerHTML = classB.length;
+    }
+  }
+
+  function downloadData() {
+    var hiddenElement = document.createElement('a');
+    hiddenElement.href = 'data:attachment/text,' + encodeURI(classA);
+    hiddenElement.target = '_blank';
+    hiddenElement.download = 'NG.txt';
+    hiddenElement.click();
+    var hiddenElement = document.createElement('a');
+    hiddenElement.href = 'data:attachment/text,' + encodeURI(classB);
+    hiddenElement.target = '_blank';
+    hiddenElement.download = 'OK.txt';
+    hiddenElement.click();
+  }
+
+  window.onload = function() {
+    function onKeyUp(e) {
+      if(e.code=='KeyF') {
+        classA.push( fileNames[cursor] );
+        chache.push('A');
+        next();
+        document.getElementById('classA').innerHTML = classA.length;
+      } else if(e.code=='KeyJ') {
+        classB.push( fileNames[cursor] );
+        chache.push('B');
+        next();
+        document.getElementById('classB').innerHTML = classB.length;
+      }
+      e.preventDefault();
+    };
+
+    // Set up key event handlers
+    window.addEventListener('keyup', onKeyUp);
+  };
+
+</script>
+
+<div class="container">
+  <div class="row">
+    <div class="col-sm-12 mt-5">
+      <div class="btn btn-success p-0">
+        <input class="p-1" type="file" webkitdirectory directory onChange="fileListDirectory(this.files)">
+      </div>
+      <div id=progress></div>
+      <div style="display: none;">前の画像：<span id="previous">結果がここに表示されます。</span></div>
+      <div style="display: none;">今の画像：<span id="current">結果がここに表示されます。</span></div>
+      <div style="display: none;">次の画像：<span id="next">結果がここに表示されます。</span></div>
+
+      <div>
+        <canvas id="cur_canvas" width="300" height="300"></canvas>
+      </div>
+      <button class="btn btn-success" onclick="undo()">1つ戻る</button-->
+      <button class="btn btn-success" onclick="downloadData()">ダウンロード</button-->
+    </div>
+    <div class="col-sm-6 mt-5">
+      <h2>不良データ</h2>
+      <div id="classA">
+      </div>
+    </div>
+    <div class="col-sm-6 mt-5">
+      <h2>優良データ</h2>
+      <div id="classB">
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
